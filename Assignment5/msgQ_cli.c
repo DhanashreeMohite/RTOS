@@ -7,6 +7,7 @@ Design a client and server model to implement this app
 
 //sending input
 //receiving result
+#define MAXSIZE 128
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +19,7 @@ Design a client and server model to implement this app
 
 struct msgBuf {
 long mesg_type;
-char data[10];
+char data[MAXSIZE];
 };
 
 int main(void)
@@ -26,9 +27,9 @@ int main(void)
         struct msgBuf buf;
         int msqid;
         key_t key;
-        int c;
+        int a,b,c;
 
-        if ((key = ftok("msgRef.txt", 'B')) == -1) //generating key--> depends on path and id
+        if ((key = ftok(".", 'A')) == -1) //generating key--> depends on path and id
         {
                 perror("ftok");
                 exit(0);
@@ -70,17 +71,17 @@ int main(void)
                         break;}
         
         }
-
+        
         // sending inputs
         int len = strlen(buf.data);
         buf. mesg_type = 1;
         if (msgsnd(msqid, &buf, (len+1), 0) == -1) /* +1 for '\0' */
                 perror("msgsnd");
                 
-        printf("%s Data Send\n", buf.data);
-        
+        printf("%s Data Send \n", buf.data);
+       
         //Receiving result
-        if (msgrcv(msqid, &buf, (len+1), 1, 0) == -1)
+        if (msgrcv(msqid, &buf, MAXSIZE, 1, 0) == -1)
                 perror("msgrcv");
                 
         sscanf(buf.data, "%d", &c);

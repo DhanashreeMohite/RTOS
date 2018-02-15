@@ -17,29 +17,29 @@ Re-write the sample program (Which was discussed in class) which uses Shared mem
 #include <sys/sem.h>
 
 struct SharedMemory {
-//long mtype;
 char mtext[200];
 };
 
 int main()
 {
+        //shared memory operations
         key_t key;
         struct SharedMemory *m;
         
         int shmid;
-        if ((key = ftok("reference.txt", 'B')) == -1)
+        if ((key = ftok(".", 'B')) == -1)       //generating key
         {
                 printf("ftok");
                 exit(1);
         }
    //IPC_CREAT | 0666 for a server (i.e., creating and granting read and write access to the server)
-        if ((shmid = shmget(key, (200*sizeof(char)), (IPC_CREAT | 0666))) < 0)
+        if ((shmid = shmget(key, (200*sizeof(char)), (IPC_CREAT | 0666))) < 0)  //shared mem ID
         {
                 perror("shmget");
                 exit(1);
         }
         
-        m= shmat(shmid, NULL, 0);
+        m= shmat(shmid, NULL, 0);       //attaches shared mem
 
         if ( m == (struct SharedMemory *)-1)
         {       
@@ -69,7 +69,7 @@ int main()
         }
         else
         {
-                wait(NULL);
+                wait(NULL);     //waiting till child completes writing
                 for(int i = 0; i<10; i++)
                 {
                         printf("reading= %s \n",m->mtext);
@@ -79,7 +79,7 @@ int main()
                 
         }
         
-        shmdt(NULL);
+        shmdt(NULL);    //dettaches shared mem
         return 0;
         
 }

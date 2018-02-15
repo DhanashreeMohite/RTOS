@@ -24,7 +24,7 @@ char mtext[200];
 };
 
 
-pthread_mutex_t mut;
+pthread_mutex_t mut; //mutex
 
 int main()
 {
@@ -32,19 +32,19 @@ int main()
         struct SharedMemory *m;
         
         int shmid;
-        if ((key = ftok("reference.txt", 'B')) == -1)
+        if ((key = ftok(".", 'B')) == -1)       //generating key
         {
                 printf("ftok");
                 exit(1);
         }
    //IPC_CREAT | 0666 for a server (i.e., creating and granting read and write access to the server)
-        if ((shmid = shmget(key, (200*sizeof(char)), (IPC_CREAT | 0666))) < 0)
+        if ((shmid = shmget(key, (200*sizeof(char)), (IPC_CREAT | 0666))) < 0)  //shared mem ID
         {
                 perror("shmget");
                 exit(1);
         }
         
-        m= shmat(shmid, NULL, 0);
+        m= shmat(shmid, NULL, 0);       //attaches shared mem
 
         if ( m == (struct SharedMemory *)-1)
         {       
@@ -67,7 +67,7 @@ int main()
         if(pid == 0)
         {
                
-                if (pthread_mutex_lock(&mut) != 0)                                  
+                if(pthread_mutex_lock(&mut) != 0)     //locking before writing                             
                         perror("mutex_lock"); 
                         
                 for(int i = 0; i<10; i++)
@@ -76,29 +76,29 @@ int main()
                         printf("writing: %s \n", m->mtext);
                 }
                 
-                if (pthread_mutex_unlock(&mut) != 0)                                  
-                        perror("mutex_lock"); 
+                if(pthread_mutex_unlock(&mut) != 0)  //unlocking after writing                             
+                        perror("mutex_unlock"); 
                 
                 exit(0);
                       
         }
         else
         { 
-                if (pthread_mutex_lock(&mut) != 0)                                  
+                if(pthread_mutex_lock(&mut) != 0)     //locking before reading                             
                         perror("mutex_lock"); 
                 for(int i = 0; i<10; i++)
                 {
                         printf("reading= %s \n",m->mtext);
 
                 }
-                if (pthread_mutex_unlock(&mut) != 0)                                  
-                        perror("mutex_lock");  
+                if(pthread_mutex_unlock(&mut) != 0) //unlocking after reading                               
+                        perror("mutex_unlock");  
                 
                 exit(0);
                 
          }
          
-        shmdt(NULL);
+        shmdt(NULL);    //dettaches shared mem
         return 0;
         
 }

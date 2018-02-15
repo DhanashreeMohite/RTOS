@@ -42,7 +42,7 @@ int main()
                 close(1);       //close stdout
                 close(fd[0]);   //close read end
                 dup(fd[1]);     //duplicate stdout
-                execl("/bin/ls", "ls","-l", NULL);
+                execl("/bin/ls", "ls","-l", NULL);     
                 printf("ls error\n");
                 exit(1);
         }
