@@ -9,15 +9,44 @@
 #include<netinet/in.h>
 #include <errno.h>
 #include <stdlib.h>
+#include "pthread.h"
 
 #define Max 4096
 #define PORT 5050
+
+int MsgBuff = 500;
+
+void *RcvMsg(void * sd)
+{
+        char message[MsgBuff];
+        int response;
+        int socket_fd = (int) sd;
+        while(1)
+        {
+                memset(message, 0, MsgBuff); // Clear message buffer
+                response = recvfrom(socket_fd, message, MsgBuff, 0, NULL, NULL);
+                if (response == -1) 
+                {
+                        printf("\nError in receiving\n");
+                        break;
+                } 
+                else if (response == 0) {
+                      printf("\nPeer disconnected\n");
+                      break;
+                }
+                else if (message != NULL)
+                {
+                        printf("\nServer> %s", message);     
+                }
+        }
+}
 
 int main(int argc, char * argv[])
 {
         struct sockaddr_in serv;
         int sd, bufLen;
-        char buf[Max];
+        char message[MsgBuff];
+        pthread_t thread;
         
         //memset(buf, '0', sizeof(buf));
         
@@ -40,30 +69,19 @@ int main(int argc, char * argv[])
         }
         
         printf ("Connection Established\n");
+        //printf ("sd: %d\n", sd);
+        // Create new thread to receive messages
+        pthread_create(&thread, NULL, RcvMsg, (void *)sd);
         
-        while(1)
-        {
-        printf ("Client: Enter your message:\n");
-        
-        while(fgets(buf, sizeof (buf), stdin) != NULL)
-        {
-                int len = strlen(buf);
-                if (buf[len-1] == '\n'){ 
-                        buf[len-1] = '\0';
-                        break;}
-        
+       
+        while (fgets(message, MsgBuff, stdin) != NULL) {
+        if (strncmp(message, "/q", 2) == 0) {
+        printf("Closing connection...\n");
+        break;
         }
-        bufLen = strlen(buf);
-        
-        //write(sd,buf, bufLen);
-        send(sd,buf, bufLen,0);
-        //printf ("message sent:%s\n",buf);
-        
-        memset(buf,' ', bufLen);        //added when 'send' used
-        read (sd, buf, Max);
-        printf ("Message from server: %s\n", buf);
-        bufLen = strlen(buf);
-        memset(buf,' ', bufLen);
+        send(sd, message, strlen(message)+1, 0);
         }
+        
+        close(sd);
+        exit(0);      
 }
-

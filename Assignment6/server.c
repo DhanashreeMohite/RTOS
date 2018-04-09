@@ -7,17 +7,45 @@
 #include <fcntl.h>
 #include<sys/stat.h>
 #include <string.h>
-#include <errno.h>
+#include "pthread.h"
 
 #define Max 4096
 #define PORT 5050
+
+int MsgBuff = 500;
+
+void *RcvMsg(void * sd)
+{
+        char message[MsgBuff];
+        int response;
+        int socket_fd = (int) sd;
+        while(1)
+        {
+                memset(message, 0, MsgBuff); // Clear message buffer
+                response = recvfrom(socket_fd, message, MsgBuff, 0, NULL, NULL);
+                if (response == -1) 
+                {
+                        printf("\nError in receiving\n");
+                        break;
+                } 
+                else if (response == 0) {
+                      printf("\nPeer disconnected\n");
+                      break;
+                }
+                else if(message != NULL)
+                {
+                        printf("\nClient> %s", message);     
+                }
+        }
+          
+}
 
 int main()
 {
         struct sockaddr_in serv, cli;
         int sd, sz, nsd,bufLen; 
-        char buf[Max];
-        int opt = 1;
+        char message[MsgBuff];
+        pthread_t thread;
         
         memset(&serv, '0', sizeof(serv));
         
@@ -52,32 +80,24 @@ int main()
         
         nsd=accept(sd,(struct sockaddr*)NULL,NULL);
         
-        while(1)
+        // Create new thread to receive messages
+        pthread_create(&thread, NULL, RcvMsg, (void *)nsd);
+        
+        while (fgets(message, MsgBuff, stdin) != NULL) 
         {
-        //printf ("Message accepted\n");
-        memset(buf,' ', bufLen);        //added when 'send' used
-        read(nsd,buf,Max);
-        printf ("Message from Client: %s\n", buf);
-        
-        bufLen = strlen(buf);
-        memset(buf,' ', bufLen);
-        
-        printf ("server: Enter your message:\n");
-        while(fgets(buf, sizeof (buf), stdin) != NULL)
-        {
-                int len = strlen(buf);
-                if (buf[len-1] == '\n'){ 
-                        buf[len-1] = '\0';
-                        break;}
-        
+                if (strncmp(message, "/q", 2) == 0) 
+                {
+                printf("Closing connection...\n");
+                break;
+                }
+                send(nsd, message, strlen(message)+1, 0);
+                //printf ("sd: %d\n", nsd);
         }
-        bufLen = strlen(buf);
-        
-        //write(nsd,buf, bufLen);
-        send(nsd,buf,bufLen,0);
-        }
+      
+        pthread_exit(NULL);       
         close(nsd);
+        close(sd);
+        exit(0);
+        
 
 }
-
-
